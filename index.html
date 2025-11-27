@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
-      <title></title>
+      <title>Room Escape Digital Puzzles</title>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <link href="css/styles.css" rel="stylesheet">
@@ -15,12 +15,11 @@
       </div>
       <div id="word_puzzle_input_container">
         <div id="clue">Banking and colliding in the skies above Verdun, the ________ (8) still offered their French and German pilots more structural stability than their single-winged counterparts. They would be ________(8) for metal at the end of the war.</div>
-        <input type="text" placeholder="Fill in the blanks above..." required="" id="guess_input" onkeyup="inputKeyUp(event);" />
-        <div class="button" id="submit_guess" onclick="submitGuess(this);">
+        <input type="text" placeholder="Fill in the blanks above..." required id="guess_input" />
+        <div class="button" id="submit_guess">
           Submit Guess
         </div>
         <div id="notice_box"></div>
-			</div>
       </div>
       <div id="puzzle_container">
         <div id="puzzle_words"></div>
@@ -30,8 +29,8 @@
           </div>
         </div>
       </div>
+      <script src="js/index.js"></script>
     </body>
-    <script src="js/index.js"></script>
 </html>
 
 

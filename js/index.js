@@ -16,7 +16,20 @@
 // //OOOOOOOOOOOO\\\\\\\\\\\\\\\\\\\\\\\\\   
 ////OOOOOOOOOOOOOO\\\\\\\\\\\\\\\\\\\\\\\\\ 
 
-document.body.onload = init;
+document.addEventListener('DOMContentLoaded', () => {
+  init();
+
+  // Set up event listeners
+  document.getElementById("guess_input").addEventListener('keyup', inputKeyUp);
+  document.getElementById("submit_guess").addEventListener('click', submitGuess);
+
+  const startButton = document.getElementById("start_button");
+  startButton.addEventListener('click', () => {
+    shufflePuzzle();
+    countDown();
+    startButton.remove();
+  });
+});
 
 const ANSWERS = [
   {
@@ -33,25 +46,25 @@ const GUESS_ELEMENT_HASH = {};
 const puzzleWordElement = document.getElementById("puzzle_words");
 
 function initWordPuzzle(text){
-  each(text, function(char){
+  for (const char of text) {
     if (isSpaceCharacter(char)){
       addElementToBody(createSpaceElement());
     } else {
       addElementToBody(createCharacterElement(char));
     }
-  });
+  }
 }
 
 function createCharacterElement(char){
   if (charInAnswer(char)){
-    element = createGuessLetterElement(char);
-    popuplateGuessElementHash(char, element);
+    const element = createGuessLetterElement(char);
+    populateGuessElementHash(char, element);
     return element;
   }
   return createRevealedLetterElement(char);
 }
 
-function popuplateGuessElementHash(char, element){
+function populateGuessElementHash(char, element){
   if (!GUESS_ELEMENT_HASH[char]){
     GUESS_ELEMENT_HASH[char] = [];
   }
@@ -74,10 +87,10 @@ function createSpaceElement(){
 }
 
 function createRevealedLetterElement(char){
-  let letterElement = document.createElement("div");
+  const letterElement = document.createElement("div");
   letterElement.dataset.letter = char;
   letterElement.className = "revealed-letter-element";
-  letterElement.innerHTML = char;
+  letterElement.textContent = char;
   return letterElement;
 }
 
@@ -86,65 +99,28 @@ function isSpaceCharacter(char){
 }
 
 function revealCorrectGuess(word){
-  each(word, function(letter){
-    let optionsArray = GUESS_ELEMENT_HASH[letter];
-    let choice = chooseRandomOption(optionsArray);
-    delete(choice.dataset.letter);
+  for (const letter of word) {
+    const optionsArray = GUESS_ELEMENT_HASH[letter];
+    const choice = chooseRandomOption(optionsArray);
+    choice.dataset.letter = "";
     choice.style.borderBottom = "none";
     choice.style.textShadow = "10px 10px 0 #ffd217, 20px 20px 0 #5ac7ff, 30px 30px 0 #ffd217, 40px 40px 0 #5ac7ff";
     choice.style.color = "white";
-  });
-}
-
-function chooseRandomOption(optionsArray){
-  filteredOptions = filter(optionsArray, onlyTakeUnchosen);
-  let randomIndex = Math.floor(Math.random()*(filteredOptions.length));
-  let choice = filteredOptions[randomIndex];
-  return choice
-}
-
-function onlyTakeUnchosen(option){
-  if (option.dataset.letter){
-    return true;
-  } else {
-    return false;
-  } 
-}
-
-function createGuessLetterElement(letter){
-  let letterElement = document.createElement("div");
-  letterElement.dataset.letter = letter;
-  letterElement.className = "letter-element";
-  letterElement.innerHTML = letter;
-  return letterElement;
-}
-
-function each(objOrArray, callback){
-  if (Array.isArray(objOrArray)){
-    for (var i = 0; i <= objOrArray.length - 1; i++){
-      callback(objOrArray[i], i);
-    }
-  } else {
-    for (key in objOrArray){
-      callback(objOrArray[key], key);
-    }
   }
 }
 
-function map(array, callback){
-  var mapped = [];
-  each(array, function(item){
-    mapped.push(callback(item));
-  })
-  return mapped;
+function chooseRandomOption(optionsArray){
+  const filteredOptions = optionsArray.filter(option => option.dataset.letter);
+  const randomIndex = Math.floor(Math.random() * filteredOptions.length);
+  return filteredOptions[randomIndex];
 }
 
-function filter(array, filterFunction){
-  let filtered = [];
-  each(array, function(item){
-    if (filterFunction(item)){ filtered.push(item); }
-  });
-  return filtered;
+function createGuessLetterElement(letter){
+  const letterElement = document.createElement("div");
+  letterElement.dataset.letter = letter;
+  letterElement.className = "letter-element";
+  letterElement.textContent = letter;
+  return letterElement;
 }
 
 function markComplete(answer){
@@ -152,49 +128,44 @@ function markComplete(answer){
 }
 
 function guessIsCorrect(guess){
-  guess = guess.toLowerCase();
-  for (var i = 0; i < ANSWERS.length; i++){
-    if (guess === ANSWERS[i].text){
-      console.log(ANSWERS[i]);
-      if (ANSWERS[i].complete){
-        alertAlreadyAnswered(guess);
-        return false;
-      } else {
-        markComplete(ANSWERS[i]);
-        return true;
-      }
+  const lowerGuess = guess.toLowerCase();
+  const answer = ANSWERS.find(a => a.text === lowerGuess);
+  if (answer) {
+    if (answer.complete) {
+      alertAlreadyAnswered(lowerGuess);
+      return false;
     }
+    markComplete(answer);
+    return true;
   }
-  alertWrongAnswer(guess);
+  alertWrongAnswer(lowerGuess);
   return false;
 }
 
 function submitGuess(){
-  let input = document.getElementById("guess_input");
-  let guess = input.value;
+  const input = document.getElementById("guess_input");
+  const guess = input.value;
   if (guess && guessIsCorrect(guess)){
-    document.getElementById("notice_box").innerHTML = "";
+    document.getElementById("notice_box").textContent = "";
     revealCorrectGuess(guess);
     input.value = "";
   }
 }
 
 function inputKeyUp(event){
-  const enterKey = 13;
-  event.which = event.which || event.keventyCode;
-    if (event.which == enterKey) {
-       submitGuess();
-    }
+  if (event.key === "Enter") {
+    submitGuess();
+  }
 }
 
 function alertWrongAnswer(wrongAnswer){
-  let elem = document.getElementById("notice_box");
-  elem.innerHTML = `Sorry, '${wrongAnswer}' is not the right answer. Guess again!`;
+  const elem = document.getElementById("notice_box");
+  elem.textContent = `Sorry, '${wrongAnswer}' is not the right answer. Guess again!`;
 }
 
 function alertAlreadyAnswered(answer){
-  let elem = document.getElementById("notice_box");
-  elem.innerHTML = `Sorry, you already guessed '${answer}. Guess again!`;
+  const elem = document.getElementById("notice_box");
+  elem.textContent = `Sorry, you already guessed '${answer}'. Guess again!`;
 }
 
 // IMAGE PUZZLE adapted from: https://code.tutsplus.com/tutorials/create-an-html5-canvas-tile-swapping-puzzle--active-10747
@@ -203,17 +174,17 @@ const PUZZLE_DIFFICULTY = 5;
 const PUZZLE_HOVER_TINT = '#009900';
 const PUZZLE_INITIAL_VIEW_LENGTH_MS = 5000;
  
-var CONVAS;
-var STAGE;
-var IMAGE;
-var PIECES;
-var PUZZLE_WIDTH;
-var PUZZLE_HEIGHT;
-var PEICE_WIDTH;
-var PIECE_HEIGHT;
-var CURRENT_PIECE;
-var CURRENT_DROPPIECE;
-var MOUSE;
+let CANVAS;
+let CONTEXT;
+let IMAGE;
+let PIECES;
+let PUZZLE_WIDTH;
+let PUZZLE_HEIGHT;
+let PIECE_WIDTH;
+let PIECE_HEIGHT;
+let CURRENT_PIECE;
+let CURRENT_DROPPIECE;
+let MOUSE;
 
 function init(){
     IMAGE = new Image();
@@ -222,28 +193,24 @@ function init(){
 }
 
 function onImage(e){
-    PEICE_WIDTH = Math.floor(IMAGE.width / PUZZLE_DIFFICULTY)
-    PIECE_HEIGHT = Math.floor(IMAGE.height / PUZZLE_DIFFICULTY)
-    PUZZLE_WIDTH = PEICE_WIDTH * PUZZLE_DIFFICULTY;
+    PIECE_WIDTH = Math.floor(IMAGE.width / PUZZLE_DIFFICULTY);
+    PIECE_HEIGHT = Math.floor(IMAGE.height / PUZZLE_DIFFICULTY);
+    PUZZLE_WIDTH = PIECE_WIDTH * PUZZLE_DIFFICULTY;
     PUZZLE_HEIGHT = PIECE_HEIGHT * PUZZLE_DIFFICULTY;
     setCanvas();
     initPuzzle();
 }
 
-start = document.getElementById("start_button")
-start.addEventListener('click', function(){
-  shufflePuzzle();
-  countDown();
-  start.parentNode.removeChild(start)
-})
+let clickWrapper;
+let frame;
 
 function setCanvas(){
-    _clickWrapper = document.getElementById('canvas_click_wrapper');
-    _frame = document.getElementById('frame');
-    CONVAS = document.getElementById('canvas');
-    constGE = CONVAS.getContext('2d');
-    CONVAS.width = PUZZLE_WIDTH;
-    CONVAS.height = PUZZLE_HEIGHT;
+    clickWrapper = document.getElementById('canvas_click_wrapper');
+    frame = document.getElementById('frame');
+    CANVAS = document.getElementById('canvas');
+    CONTEXT = CANVAS.getContext('2d');
+    CANVAS.width = PUZZLE_WIDTH;
+    CANVAS.height = PUZZLE_HEIGHT;
 }
 
 function initPuzzle(){
@@ -251,33 +218,29 @@ function initPuzzle(){
     MOUSE = { x: 0, y: 0 };
     CURRENT_PIECE = null;
     CURRENT_DROPPIECE = null;
-    constGE.drawImage(IMAGE, 0, 0, PUZZLE_WIDTH, PUZZLE_HEIGHT, 0, 0, PUZZLE_WIDTH, PUZZLE_HEIGHT);
+    CONTEXT.drawImage(IMAGE, 0, 0, PUZZLE_WIDTH, PUZZLE_HEIGHT, 0, 0, PUZZLE_WIDTH, PUZZLE_HEIGHT);
     buildPieces();
 }
 
 function createTitle(msg){
-    constGE.fillStyle = "#000000";
-    constGE.globalAlpha = .4;
-    constGE.fillRect(100,PUZZLE_HEIGHT - 40,PUZZLE_WIDTH - 200,40);
-    constGE.fillStyle = "#FFFFFF";
-    constGE.globalAlpha = 1;
-    constGE.textAlign = "center";
-    constGE.textBaseline = "middle";
-    constGE.font = "20px Arial";
-    constGE.fillText(msg,PUZZLE_WIDTH / 2,PUZZLE_HEIGHT - 20);
+    CONTEXT.fillStyle = "#000000";
+    CONTEXT.globalAlpha = .4;
+    CONTEXT.fillRect(100,PUZZLE_HEIGHT - 40,PUZZLE_WIDTH - 200,40);
+    CONTEXT.fillStyle = "#FFFFFF";
+    CONTEXT.globalAlpha = 1;
+    CONTEXT.textAlign = "center";
+    CONTEXT.textBaseline = "middle";
+    CONTEXT.font = "20px Arial";
+    CONTEXT.fillText(msg,PUZZLE_WIDTH / 2,PUZZLE_HEIGHT - 20);
 }
 
 function buildPieces(){
-    var i;
-    var piece;
-    var xPos = 0;
-    var yPos = 0;
-    for(i = 0; i < PUZZLE_DIFFICULTY * PUZZLE_DIFFICULTY; i++){
-        piece = {};
-        piece.sx = xPos;
-        piece.sy = yPos;
+    let xPos = 0;
+    let yPos = 0;
+    for(let i = 0; i < PUZZLE_DIFFICULTY * PUZZLE_DIFFICULTY; i++){
+        const piece = { sx: xPos, sy: yPos };
         PIECES.push(piece);
-        xPos += PEICE_WIDTH;
+        xPos += PIECE_WIDTH;
         if(xPos >= PUZZLE_WIDTH){
             xPos = 0;
             yPos += PIECE_HEIGHT;
@@ -287,62 +250,53 @@ function buildPieces(){
 
 function shufflePuzzle(){
     PIECES = shuffleArray(PIECES);
-    constGE.clearRect(0,0,PUZZLE_WIDTH,PUZZLE_HEIGHT);
-    var i;
-    var piece;
-    var xPos = 0;
-    var yPos = 0;
-    for(i = 0;i < PIECES.length;i++){
-        piece = PIECES[i];
+    CONTEXT.clearRect(0,0,PUZZLE_WIDTH,PUZZLE_HEIGHT);
+    let xPos = 0;
+    let yPos = 0;
+    for(const piece of PIECES){
         piece.xPos = xPos;
         piece.yPos = yPos;
-        constGE.drawImage(IMAGE, piece.sx, piece.sy, PEICE_WIDTH, PIECE_HEIGHT, xPos, yPos, PEICE_WIDTH, PIECE_HEIGHT);
-        constGE.strokeRect(xPos, yPos, PEICE_WIDTH,PIECE_HEIGHT);
-        xPos += PEICE_WIDTH;
+        CONTEXT.drawImage(IMAGE, piece.sx, piece.sy, PIECE_WIDTH, PIECE_HEIGHT, xPos, yPos, PIECE_WIDTH, PIECE_HEIGHT);
+        CONTEXT.strokeRect(xPos, yPos, PIECE_WIDTH, PIECE_HEIGHT);
+        xPos += PIECE_WIDTH;
         if(xPos >= PUZZLE_WIDTH){
             xPos = 0;
             yPos += PIECE_HEIGHT;
         }
     }
-    _clickWrapper.onmousedown = onPuzzleClick;
+    clickWrapper.onmousedown = onPuzzleClick;
 }
 
-function shuffleArray(o){
-  for(var j, x, i = o.length; i; j = parseInt(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
-  return o;
+function shuffleArray(array){
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
 }
 
 function onPuzzleClick(e){
-    if(e.layerX || e.layerX == 0){
-        MOUSE.x = e.layerX - CONVAS.offsetLeft;
-        MOUSE.y = e.layerY - CONVAS.offsetTop;
-    }
-    else if(e.offsetX || e.offsetX == 0){
-        MOUSE.x = e.offsetX - CONVAS.offsetLeft;
-        MOUSE.y = e.offsetY - CONVAS.offsetTop;
-    }
+    const rect = CANVAS.getBoundingClientRect();
+    MOUSE.x = e.clientX - rect.left;
+    MOUSE.y = e.clientY - rect.top;
+
     CURRENT_PIECE = checkPieceClicked();
-    if(CURRENT_PIECE != null){
-        constGE.clearRect(CURRENT_PIECE.xPos,CURRENT_PIECE.yPos,PEICE_WIDTH,PIECE_HEIGHT);
-        constGE.save();
-        constGE.globalAlpha = .9;
-        constGE.drawImage(IMAGE, CURRENT_PIECE.sx, CURRENT_PIECE.sy, PEICE_WIDTH, PIECE_HEIGHT, MOUSE.x - (PEICE_WIDTH / 2), MOUSE.y - (PIECE_HEIGHT / 2), PEICE_WIDTH, PIECE_HEIGHT);
-        constGE.restore();
-        _clickWrapper.onmousemove = updatePuzzle;
-        _clickWrapper.onmouseup = pieceDropped;
+    if(CURRENT_PIECE !== null){
+        CONTEXT.clearRect(CURRENT_PIECE.xPos, CURRENT_PIECE.yPos, PIECE_WIDTH, PIECE_HEIGHT);
+        CONTEXT.save();
+        CONTEXT.globalAlpha = .9;
+        CONTEXT.drawImage(IMAGE, CURRENT_PIECE.sx, CURRENT_PIECE.sy, PIECE_WIDTH, PIECE_HEIGHT, MOUSE.x - (PIECE_WIDTH / 2), MOUSE.y - (PIECE_HEIGHT / 2), PIECE_WIDTH, PIECE_HEIGHT);
+        CONTEXT.restore();
+        clickWrapper.onmousemove = updatePuzzle;
+        clickWrapper.onmouseup = pieceDropped;
     }
 }
 
 function checkPieceClicked(){
-  var i;
-  var piece;
-  for(i = 0;i < PIECES.length;i++){
-    piece = PIECES[i];
-    
-    if(MOUSE.x < piece.xPos || MOUSE.x > (piece.xPos + PEICE_WIDTH) || MOUSE.y < piece.yPos || MOUSE.y > (piece.yPos + PIECE_HEIGHT)){
-      //PIECE NOT HIT
-    }
-    else{
+  for(const piece of PIECES){
+    if(MOUSE.x >= piece.xPos && MOUSE.x <= (piece.xPos + PIECE_WIDTH) &&
+       MOUSE.y >= piece.yPos && MOUSE.y <= (piece.yPos + PIECE_HEIGHT)){
       return piece;
     }
   }
@@ -351,50 +305,42 @@ function checkPieceClicked(){
 
 function updatePuzzle(e){
   CURRENT_DROPPIECE = null;
-  if(e.layerX || e.layerX == 0){
-    MOUSE.x = e.layerX - CONVAS.offsetLeft;
-    MOUSE.y = e.layerY - CONVAS.offsetTop;
-  }
-  else if(e.offsetX || e.offsetX == 0){
-    MOUSE.x = e.offsetX - CONVAS.offsetLeft;
-    MOUSE.y = e.offsetY - CONVAS.offsetTop;
-  }
-  constGE.clearRect(0,0,PUZZLE_WIDTH,PUZZLE_HEIGHT);
-  var i;
-  var piece;
-  for(i = 0;i < PIECES.length;i++){
-    piece = PIECES[i];
-    if(piece == CURRENT_PIECE){
+  const rect = CANVAS.getBoundingClientRect();
+  MOUSE.x = e.clientX - rect.left;
+  MOUSE.y = e.clientY - rect.top;
+
+  CONTEXT.clearRect(0, 0, PUZZLE_WIDTH, PUZZLE_HEIGHT);
+
+  for(const piece of PIECES){
+    if(piece === CURRENT_PIECE){
       continue;
     }
-    constGE.drawImage(IMAGE, piece.sx, piece.sy, PEICE_WIDTH, PIECE_HEIGHT, piece.xPos, piece.yPos, PEICE_WIDTH, PIECE_HEIGHT);
-    constGE.strokeRect(piece.xPos, piece.yPos, PEICE_WIDTH,PIECE_HEIGHT);
-    if(CURRENT_DROPPIECE == null){
-      if(MOUSE.x < piece.xPos || MOUSE.x > (piece.xPos + PEICE_WIDTH) || MOUSE.y < piece.yPos || MOUSE.y > (piece.yPos + PIECE_HEIGHT)){
-        //NOT OVER
-      }
-      else{
+    CONTEXT.drawImage(IMAGE, piece.sx, piece.sy, PIECE_WIDTH, PIECE_HEIGHT, piece.xPos, piece.yPos, PIECE_WIDTH, PIECE_HEIGHT);
+    CONTEXT.strokeRect(piece.xPos, piece.yPos, PIECE_WIDTH, PIECE_HEIGHT);
+    if(CURRENT_DROPPIECE === null){
+      if(MOUSE.x >= piece.xPos && MOUSE.x <= (piece.xPos + PIECE_WIDTH) &&
+         MOUSE.y >= piece.yPos && MOUSE.y <= (piece.yPos + PIECE_HEIGHT)){
         CURRENT_DROPPIECE = piece;
-        constGE.save();
-        constGE.globalAlpha = .4;
-        constGE.fillStyle = PUZZLE_HOVER_TINT;
-        constGE.fillRect(CURRENT_DROPPIECE.xPos,CURRENT_DROPPIECE.yPos,PEICE_WIDTH, PIECE_HEIGHT);
-        constGE.restore();
+        CONTEXT.save();
+        CONTEXT.globalAlpha = .4;
+        CONTEXT.fillStyle = PUZZLE_HOVER_TINT;
+        CONTEXT.fillRect(CURRENT_DROPPIECE.xPos, CURRENT_DROPPIECE.yPos, PIECE_WIDTH, PIECE_HEIGHT);
+        CONTEXT.restore();
       }
     }
   }
-  constGE.save();
-  constGE.globalAlpha = .6;
-  constGE.drawImage(IMAGE, CURRENT_PIECE.sx, CURRENT_PIECE.sy, PEICE_WIDTH, PIECE_HEIGHT, MOUSE.x - (PEICE_WIDTH / 2), MOUSE.y - (PIECE_HEIGHT / 2), PEICE_WIDTH, PIECE_HEIGHT);
-  constGE.restore();
-  constGE.strokeRect( MOUSE.x - (PEICE_WIDTH / 2), MOUSE.y - (PIECE_HEIGHT / 2), PEICE_WIDTH,PIECE_HEIGHT);
+  CONTEXT.save();
+  CONTEXT.globalAlpha = .6;
+  CONTEXT.drawImage(IMAGE, CURRENT_PIECE.sx, CURRENT_PIECE.sy, PIECE_WIDTH, PIECE_HEIGHT, MOUSE.x - (PIECE_WIDTH / 2), MOUSE.y - (PIECE_HEIGHT / 2), PIECE_WIDTH, PIECE_HEIGHT);
+  CONTEXT.restore();
+  CONTEXT.strokeRect(MOUSE.x - (PIECE_WIDTH / 2), MOUSE.y - (PIECE_HEIGHT / 2), PIECE_WIDTH, PIECE_HEIGHT);
 }
 
 function pieceDropped(e){
-  _clickWrapper.onmousemove = null;
-  _clickWrapper.onmouseup = null;
-  if(CURRENT_DROPPIECE != null){
-    var tmp = {xPos:CURRENT_PIECE.xPos,yPos:CURRENT_PIECE.yPos};
+  clickWrapper.onmousemove = null;
+  clickWrapper.onmouseup = null;
+  if(CURRENT_DROPPIECE !== null){
+    const tmp = { xPos: CURRENT_PIECE.xPos, yPos: CURRENT_PIECE.yPos };
     CURRENT_PIECE.xPos = CURRENT_DROPPIECE.xPos;
     CURRENT_PIECE.yPos = CURRENT_DROPPIECE.yPos;
     CURRENT_DROPPIECE.xPos = tmp.xPos;
@@ -404,29 +350,26 @@ function pieceDropped(e){
 }
 
 function resetPuzzleAndCheckWin(){
-  constGE.clearRect(0,0,PUZZLE_WIDTH,PUZZLE_HEIGHT);
-  var gameWin = true;
-  var i;
-  var piece;
-  for ( i = 0; i < PIECES.length; i++ ){
-    piece = PIECES[i];
-    constGE.drawImage(IMAGE, piece.sx, piece.sy, PEICE_WIDTH, PIECE_HEIGHT, piece.xPos, piece.yPos, PEICE_WIDTH, PIECE_HEIGHT);
-    constGE.strokeRect(piece.xPos, piece.yPos, PEICE_WIDTH,PIECE_HEIGHT);
-    if (piece.xPos != piece.sx || piece.yPos != piece.sy){
+  CONTEXT.clearRect(0, 0, PUZZLE_WIDTH, PUZZLE_HEIGHT);
+  let gameWin = true;
+  for (const piece of PIECES){
+    CONTEXT.drawImage(IMAGE, piece.sx, piece.sy, PIECE_WIDTH, PIECE_HEIGHT, piece.xPos, piece.yPos, PIECE_WIDTH, PIECE_HEIGHT);
+    CONTEXT.strokeRect(piece.xPos, piece.yPos, PIECE_WIDTH, PIECE_HEIGHT);
+    if (piece.xPos !== piece.sx || piece.yPos !== piece.sy){
       gameWin = false;
     }
   }
   if (gameWin){
-    setTimeout(gameOver,500);
+    setTimeout(gameOver, 500);
   }
 }
 
 function gameOver(){
-  _clickWrapper.onmousedown = null;
-  _clickWrapper.onmousemove = null;
-  _clickWrapper.onmouseup = null;
-  _frame.style.display = "none";
-  document.getElementsByTagName('html')[0].style.backgroundColor = "palevioletred";
+  clickWrapper.onmousedown = null;
+  clickWrapper.onmousemove = null;
+  clickWrapper.onmouseup = null;
+  frame.style.display = "none";
+  document.documentElement.style.backgroundColor = "palevioletred";
   document.getElementById("clock_container").style.display = "none";
   document.getElementById("word_puzzle_input_container").style.display = "flex";
   initWordPuzzle(HIDDEN_RIDDLE);
@@ -436,49 +379,69 @@ function gameOver(){
 
 const COUNTDOWN_LENGTH_SECONDS = 100;
 
-function countdownTimer(elm,tl,executeAtEnd){
- this.initialize.apply(this,arguments);
-}
-countdownTimer.prototype={
- initialize:function(elm, tl, executeAtEnd) {
-  this.elem = document.getElementById(elm);
-  this.tl = tl;
-  this.executeAtEnd = executeAtEnd;
-  this.elem.innerHTML = '<span class="number-wrapper"><div class="line"></div><span class="number min">00</span></span><span class="number-wrapper"><div class="line"></div><span class="number sec">00</span></span>';
- },countDown:function(){
-  var timer='';
-  var today=new Date();
-  // var day=Math.floor((this.tl-today)/(24*60*60*1000));
-  // var hour=Math.floor(((this.tl-today)%(24*60*60*1000))/(60*60*1000));
-  var min=Math.floor(((this.tl-today)%(24*60*60*1000))/(60*1000))%60;
-  var sec=Math.floor(((this.tl-today)%(24*60*60*1000))/1000)%60%60;
-  var me=this;
-
-  if( ( this.tl - today ) > 0 ){
-  //  timer += '<span class="number-wrapper"><div class="line"></div><div class="caption">DAYS</div><span class="number day">'+day+'</span></span>';
-  //  timer += '<span class="number-wrapper"><div class="line"></div><div class="caption">HOURS</div><span class="number hour">'+hour+'</span></span>';
-   timer += '<span class="number-wrapper"><div class="line"></div><span class="number min">'+this.addZero(min)+'</span></span><span class="number-wrapper"><div class="line"></div><span class="number sec">'+this.addZero(sec)+'</span></span>';
-   this.elem.innerHTML = timer;
-   tid = setTimeout( function(){me.countDown();},10 );
-  }else{
-  //  this.elem.innerHTML = this.mes;
-   return this.executeAtEnd();
+class CountdownTimer {
+  constructor(elementId, endTime, onComplete) {
+    this.elem = document.getElementById(elementId);
+    this.endTime = endTime;
+    this.onComplete = onComplete;
+    this.animationId = null;
+    this.lastSecond = -1;
+    this.initDisplay();
   }
- },addZero:function(num){ return ('0'+num).slice(-2); }
+
+  initDisplay() {
+    this.elem.innerHTML = `
+      <span class="number-wrapper"><div class="line"></div><span class="number min">00</span></span>
+      <span class="number-wrapper"><div class="line"></div><span class="number sec">00</span></span>
+    `;
+    this.minElem = this.elem.querySelector('.min');
+    this.secElem = this.elem.querySelector('.sec');
+  }
+
+  addZero(num) {
+    return String(num).padStart(2, '0');
+  }
+
+  update() {
+    const now = Date.now();
+    const remaining = this.endTime - now;
+
+    if (remaining > 0) {
+      const totalSeconds = Math.ceil(remaining / 1000);
+      const min = Math.floor(totalSeconds / 60);
+      const sec = totalSeconds % 60;
+
+      // Only update DOM when seconds change (performance optimization)
+      if (totalSeconds !== this.lastSecond) {
+        this.lastSecond = totalSeconds;
+        this.minElem.textContent = this.addZero(min);
+        this.secElem.textContent = this.addZero(sec);
+      }
+
+      this.animationId = requestAnimationFrame(() => this.update());
+    } else {
+      this.onComplete();
+    }
+  }
+
+  start() {
+    this.update();
+  }
+
+  stop() {
+    if (this.animationId) {
+      cancelAnimationFrame(this.animationId);
+    }
+  }
 }
-function countDown(startDelayMS = 0){ 
 
- // Set countdown limit
- var tl = new Date((new Date()).getTime() + 1000 * COUNTDOWN_LENGTH_SECONDS);
-
- // You can add time's up message here
- var timer = new countdownTimer('CDT', tl ,resetPuzzle);
- setTimeout(function(){
-  timer.countDown();
- }, startDelayMS)
+function countDown(startDelayMS = 0) {
+  const endTime = Date.now() + (COUNTDOWN_LENGTH_SECONDS * 1000);
+  const timer = new CountdownTimer('CDT', endTime, resetPuzzle);
+  setTimeout(() => timer.start(), startDelayMS);
 }
 
-function resetPuzzle(){
+function resetPuzzle() {
   shufflePuzzle();
   countDown(1000);
 }
